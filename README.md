@@ -1,6 +1,6 @@
 # Inspeção Automática de Tampa com Visão Computacional
 
-Projeto desenvolvido no SENAI em parceria com a Volkswagen do Brasil, como parte de uma estação de uma mesa giratória automatizada com robôs. A estação usa uma câmera e um modelo de visão computacional (YOLO) para inspecionar se a tampa de uma caixa foi fechada corretamente, comunicando o resultado a um Arduino que direciona a peça para a linha correta.
+Projeto desenvolvido como aluno SENAI em parceria com a Volkswagen do Brasil, como parte de uma estação de uma mesa giratória automatizada com robôs. A estação usa uma câmera e um modelo de visão computacional (YOLO) para inspecionar se a tampa de uma caixa foi fechada corretamente, comunicando o resultado a um Arduino que direciona a peça para a linha correta.
 
 ## Contexto do projeto
 
