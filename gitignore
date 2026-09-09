@@ -1,0 +1,22 @@
+# Ambiente virtual
+venv/
+env/
+
+# Dataset de imagens (muito grande para o Git)
+dataset/
+dataset_roboflow/
+
+# Modelos treinados (arquivos grandes)
+runs/
+*.pt
+
+# Banco de dados local
+*.db
+
+# Python
+__pycache__/
+*.pyc
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
