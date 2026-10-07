@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estação 3 · Supervisório</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</head>
+<body data-poll-interval="{{ poll_interval }}">
+  <header><div><span class="eyebrow">SENAI / VOLKSWAGEN DO BRASIL</span>
+    <h1>Estação 03 <span>Inspeção de tampa</span></h1></div>
+    <div id="conexao" role="status">Conectando ao painel…</div></header>
+  <main>
+    <section class="painel" aria-labelledby="estacao-titulo">
+      <div class="titulo-historico"><h2 id="estacao-titulo">Estado atual da estação</h2><span id="estacao-origem">—</span></div>
+      <div id="estacao-estado" class="estado-estacao" aria-live="polite">SEM CONEXÃO</div>
+      <p id="estacao-motivo">Processo de inspeção não iniciado.</p>
+      <div class="equipamentos"><span>Câmera: <b id="camera-status">—</b></span><span>Modelo: <b id="modelo-status">—</b></span><span>Serial: <b id="serial-status">—</b></span></div>
+      <p>Ciclo ativo: <span id="ciclo-ativo">—</span> · Atualização: <span id="estacao-atualizacao">—</span></p>
+    </section>
+    <section class="status-card" aria-labelledby="status-titulo">
+      <div><span class="eyebrow" id="status-titulo">ÚLTIMO CICLO ENCERRADO</span>
+        <div id="resultado" class="resultado neutro" aria-live="polite">AGUARDANDO</div>
+        <p id="estado">Nenhuma inspeção registrada.</p></div>
+      <dl><div><dt>Classe detectada</dt><dd id="classe">—</dd></div>
+          <div><dt>Confiança</dt><dd id="confianca">—</dd></div>
+          <div><dt>Horário</dt><dd id="horario">—</dd></div>
+          <div><dt>Origem</dt><dd id="origem">—</dd></div>
+          <div><dt>Duração</dt><dd id="duracao">—</dd></div>
+          <div><dt>Modelo / pesos</dt><dd id="modelo-versao">—</dd></div></dl>
+    </section>
+    <div class="metricas">
+      <section><span>Total de inspeções</span><strong id="total">0</strong></section>
+      <section><span>Conformes · OK</span><strong id="ok" class="verde">0</strong><small id="percentual-ok">0%</small></section>
+      <section><span>Não conformes · NOK</span><strong id="nok" class="vermelho">0</strong><small id="percentual-nok">0%</small></section>
+      <section><span>Inconclusivos</span><strong id="inconclusivo" class="amarelo">0</strong><small id="percentual-inconclusivo">0%</small></section>
+    </div>
+    <section class="painel grafico"><div><h2>Distribuição das inspeções</h2>
+      <p>Dados acumulados neste banco SQLite</p></div>
+      <div class="barras" role="img" id="grafico" aria-label="Sem inspeções">
+        <div class="linha-barra"><span>OK</span><div class="trilho"><div id="barra-ok" class="barra ok"></div></div><b id="grafico-ok">0%</b></div>
+        <div class="linha-barra"><span>NOK</span><div class="trilho"><div id="barra-nok" class="barra nok"></div></div><b id="grafico-nok">0%</b></div>
+        <div class="linha-barra"><span>INC.</span><div class="trilho"><div id="barra-inconclusivo" class="barra inconclusivo"></div></div><b id="grafico-inconclusivo">0%</b></div>
+      </div>
+    </section>
+    <section class="painel"><div class="titulo-historico"><h2>Histórico recente</h2><span>Últimas 20 inspeções</span></div>
+      <div class="tabela"><table><thead><tr><th>ID / Ciclo</th><th>Horário</th><th>Resultado</th><th>Classe</th><th>Confiança</th><th>Duração</th><th>Motivo</th><th>Serial</th><th>Origem</th><th>Imagem</th></tr></thead>
+        <tbody id="historico"><tr><td colspan="10">Nenhuma inspeção registrada.</td></tr></tbody></table></div>
+    </section>
+    <p class="nota">O estado da estação usa atualizações do processo de inspeção. O resultado da peça permanece no histórico quando a estação para. INCONCLUSIVO não significa NOK. Percentuais consideram todos os ciclos.</p>
+  </main>
+  <footer>ESTAÇÃO 3 · VISÃO COMPUTACIONAL <span>YOLOv8 Object Detection / SQLite / Serial USB</span></footer>
+</body>
+</html>

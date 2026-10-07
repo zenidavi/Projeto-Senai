@@ -16,10 +16,10 @@ O contador de cada classe aparece na tela e tambem no terminal a cada captura.
 import cv2
 import os
 from datetime import datetime
+from config import CAM_INDEX, DATASET_DIR
 
 # ---------- Configuracoes ----------
-CAM_INDEX = 0                # indice da webcam (ajuste se necessario)
-OUTPUT_DIR = "dataset"       # pasta raiz onde as imagens serao salvas
+OUTPUT_DIR = DATASET_DIR
 CLASSES = {
     ord('1'): "tampa_ok",
     ord('2'): "tampa_nok",
@@ -31,15 +31,24 @@ def criar_pastas():
     for classe in CLASSES.values():
         caminho = os.path.join(OUTPUT_DIR, classe)
         os.makedirs(caminho, exist_ok=True)
-    return {classe: len(os.listdir(os.path.join(OUTPUT_DIR, classe)))
-            for classe in CLASSES.values()}
+    contador = {}
+    for classe in CLASSES.values():
+        # Maior sequência evita sobrescrever se uma imagem foi removida.
+        numeros = [int(p.stem.removeprefix(classe + "_"))
+                   for p in (OUTPUT_DIR / classe).glob(classe + "_*.jpg")
+                   if p.stem.removeprefix(classe + "_").isdigit()]
+        contador[classe] = max(numeros, default=0)
+    return contador
 
 
 def salvar_frame(frame, classe, contador):
-    contador[classe] += 1
-    nome_arquivo = f"{classe}_{contador[classe]:04d}.jpg"
+    proximo = contador[classe] + 1
+    nome_arquivo = f"{classe}_{proximo:04d}.jpg"
     caminho = os.path.join(OUTPUT_DIR, classe, nome_arquivo)
-    cv2.imwrite(caminho, frame)
+    if not cv2.imwrite(caminho, frame):
+        print(f"ERRO: nao foi possivel salvar {caminho}")
+        return contador
+    contador[classe] = proximo
     print(f"[{datetime.now().strftime('%H:%M:%S')}] Salvo: {caminho}")
     return contador
 
@@ -66,6 +75,7 @@ def main():
             print("ERRO: falha ao ler frame da webcam.")
             break
 
+        frame_limpo = frame.copy()  # O mesmo frame mostrado, sem textos.
         # Overlay com instrucoes e contadores na tela
         overlay = frame.copy()
         texto1 = f"[1] OK: {contador['tampa_ok']}"
@@ -89,9 +99,7 @@ def main():
         elif key in CLASSES:
             classe = CLASSES[key]
             # salva o frame SEM o overlay (imagem limpa)
-            ret2, frame_limpo = cap.read()
-            if ret2:
-                contador = salvar_frame(frame_limpo, classe, contador)
+            contador = salvar_frame(frame_limpo, classe, contador)
 
     cap.release()
     cv2.destroyAllWindows()
