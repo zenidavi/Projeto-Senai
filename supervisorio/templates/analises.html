@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#001e50">
+  <title>Estação 03 | Dados e Relatórios</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='analises.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='centro_controle.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='qualidade.css') }}">
+  <script defer src="{{ url_for('static', filename='analises.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='centro_controle.js') }}"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div><span class="eyebrow">SENAI · VOLKSWAGEN | ESTAÇÃO 03</span>
+        <h1>Dados e relatórios</h1>
+      </div>
+    </div>
+    <nav class="nav-top" aria-label="Navegação"><a href="/">← Supervisório</a></nav>
+  </header>
+  <main>
+    {% include 'abas.html' %}
+    {% if somente_leitura %}
+    <p class="aviso-consulta" role="status">Modo somente leitura · Consulta ao histórico</p>
+    {% endif %}
+    {% if simulacao %}
+    <p class="aviso-simulacao" role="status">Modo simulação · Ciclos gerados por software</p>
+    {% endif %}
+    <section class="aviso" aria-label="Fonte de dados"><span class="led"></span> <strong>Histórico do SQLite local</strong><span>Use o filtro Origem para selecionar inspeções reais ou simuladas.</span></section>
+    <section class="painel filtros">
+      <div class="titulo-linha"><div><span class="eyebrow">CONSULTA</span><h2>Filtros de produção</h2></div><span class="muted" id="ultima-consulta">Aguardando consulta…</span></div>
+      <form id="filtros-form" autocomplete="off"{% if abas_qualidade %} data-ocorrencias="{{ url_for('ocorrencias.lista') }}"{% endif %}>
+        <label>De <input id="inicio" name="inicio" type="date"></label>
+        <label>Até <input id="fim" name="fim" type="date"></label>
+        <label>Resultado <select id="resultado" name="resultado"><option value="">Todos</option><option value="OK">OK</option><option value="NOK">NOK</option><option value="INCONCLUSIVO">Inconclusivo</option></select></label>
+        <label>Origem <select id="origem" name="origem"><option value="">Todas</option><option value="real">Real</option><option value="simulador">Simulada</option></select></label>
+        <label>Classe <select id="classe" name="classe"><option value="">Todas</option></select></label>
+        <label>Versão IA <select id="versao" name="versao"><option value="">Todas</option></select></label>
+        {% if abas_qualidade %}<label>Motivo exato <input id="motivo" name="motivo" maxlength="2000"></label>{% endif %}
+        <div class="acoes"><button type="submit" class="principal">Aplicar filtros</button><button type="button" id="limpar" class="secundario">Limpar</button></div>
+      </form>
+      <div id="exportacoes" hidden>
+        <div class="exportacoes">
+          <div class="exportacoes-info"><strong id="exportacao-contagem">Exportar consulta</strong>
+            <span>PDF com resumo e até 100 inspeções. Excel e CSV com até 50 mil registros.</span>
+          </div>
+          <div class="exportacoes-links">
+            <a id="link-xlsx" href="{{ url_for('estacao3_analises.exportar_xlsx') }}">Excel <span>.xlsx</span></a>
+            <a id="link-pdf" href="{{ url_for('estacao3_analises.relatorio_pdf') }}">Relatório <span>.pdf</span></a>
+            <a id="link-csv" href="{{ url_for('estacao3_analises.exportar_csv') }}">Dados <span>.csv</span></a>
+          </div>
+        </div>
+      </div>
+      <div id="erro" class="erro" role="alert" hidden></div>
+    </section>
+
+    <section aria-labelledby="resumo-titulo">
+      <div class="titulo-linha"><div><span class="eyebrow">VISÃO GERAL</span><h2 id="resumo-titulo">Indicadores da inspeção</h2></div><span class="muted">Calculados sobre o filtro selecionado</span></div>
+      <div class="metricas">
+        <article class="kpi"><span>Inspeções</span><strong id="k-total">—</strong><small>Total filtrado</small></article>
+        <article class="kpi destaque-ok"><span>Conformidade</span><strong id="k-conformidade">—</strong><small>OK / (OK + NOK)</small></article>
+        <article class="kpi"><span>Resultados OK</span><strong class="ok" id="k-ok">—</strong><small>Conformes</small></article>
+        <article class="kpi"><span>Resultados NOK</span><strong class="nok" id="k-nok">—</strong><small>Não conformes</small></article>
+        <article class="kpi"><span>Inconclusivos</span><strong class="aviso-txt" id="k-inc">—</strong><small>Não são automaticamente NOK</small></article>
+        <article class="kpi"><span>Tempo médio do ciclo</span><strong id="k-duracao">—</strong><small>Em milissegundos</small></article>
+        <article class="kpi"><span>Confiança média</span><strong id="k-confianca">—</strong><small>Inspeções OK/NOK</small></article>
+        <article class="kpi"><span>Evidências com imagem</span><strong id="k-imagem">—</strong><small>Registros com caminho de imagem</small></article>
+      </div>
+    </section>
+
+    <div class="dois">
+      <section class="painel"><div class="titulo-linha"><div><span class="eyebrow">QUALIDADE</span><h2>Distribuição de resultados</h2></div></div>
+        <div class="grafico-resultados"><div class="anel" id="anel" role="img" aria-label="Nenhum registro"><div><strong id="anel-total">—</strong><span>INSPEÇÕES</span></div></div>
+          <div class="legenda"><div><b class="ponto ok-bg"></b> OK <strong id="leg-ok">—</strong></div><div><b class="ponto nok-bg"></b> NOK <strong id="leg-nok">—</strong></div><div><b class="ponto inc-bg"></b> Inconclusivo <strong id="leg-inc">—</strong></div></div></div>
+      </section>
+      <section class="painel"><div class="titulo-linha"><div><span class="eyebrow">PRODUÇÃO</span><h2>Evolução das inspeções</h2></div><span class="muted">Até 30 dias com registros</span></div>
+        <div id="tendencia" class="tendencia" aria-label="Histórico por dia"></div><p class="nota">Barras por data de registro, separadas por resultado. Dias sem inspeções não aparecem.</p>
+      </section>
+    </div>
+
+    <div class="dois">
+      <section class="painel"><div class="titulo-linha"><div><span class="eyebrow">RASTREABILIDADE</span><h2>Classes detectadas</h2></div></div><div id="classes" class="linhas"></div></section>
+      <section class="painel"><div class="titulo-linha"><div><span class="eyebrow">DIAGNÓSTICO</span><h2>Estado da estação</h2></div><span class="status" id="status-estacao">Consultando…</span></div>
+        <dl class="estado-grid">
+          <div><dt>Câmera</dt><dd id="diag-camera">—</dd></div><div><dt>Modelo IA</dt><dd id="diag-modelo">—</dd></div>
+          <div><dt>Serial / comunicação</dt><dd id="diag-serial">—</dd></div><div><dt>Última atualização</dt><dd id="diag-atualizacao">—</dd></div>
+          <div><dt>SQLite</dt><dd id="diag-sqlite">—</dd></div><div><dt>Prévia JPEG</dt><dd id="diag-preview">—</dd></div>
+          <div><dt>Falhas de publicação na sessão</dt><dd id="diag-jpeg-falhas">—</dd></div><div><dt>Último erro de publicação</dt><dd id="diag-jpeg-erro">—</dd></div>
+          <div><dt>FPS inferência</dt><dd id="diag-fps-ia">Não instrumentado</dd></div><div><dt>FPS transmissão</dt><dd id="diag-fps-video">Não instrumentado</dd></div>
+          <div><dt>Última inferência e anotação</dt><dd id="diag-latencia">—</dd></div><div><dt>Tempo de resposta da API</dt><dd id="diag-api">—</dd></div>
+          <div><dt>Última captura</dt><dd id="diag-captura">—</dd></div>
+          <div><dt>Última codificação JPEG</dt><dd id="diag-codificacao">—</dd></div>
+          <div><dt>Última publicação JPEG</dt><dd id="diag-publicacao">—</dd></div>
+        </dl>
+        <p id="diag-motivo" class="nota"></p>
+        <p class="nota pendencia"><strong>Teto da prévia de 12 FPS:</strong> taxa real pendente de medição na estação.</p>
+      </section>
+    </div>
+
+    <div class="dois">
+      <section class="painel"><div class="titulo-linha"><div><h2>Ranking de motivos</h2></div><span class="muted">Até 15 motivos por frequência</span></div>
+        {% if abas_qualidade %}<p>Selecione um motivo para ver as inspeções no histórico.</p>{% endif %}
+        <div id="motivos" class="linhas"></div></section>
+      <section class="painel"><div class="titulo-linha"><div><span class="eyebrow">COMUNICAÇÃO</span><h2>Status de envio</h2></div></div><div id="comunicacao" class="linhas"></div>
+        <p class="nota">O resultado visual e o status de comunicação são independentes. Um OK sem ACK não equivale à liberação pelo controlador.</p></section>
+    </div>
+
+    <section class="painel" id="historico-detalhado" tabindex="-1"><div class="titulo-linha"><div><span class="eyebrow">AUDITORIA</span><h2>Histórico detalhado</h2></div><span class="muted" id="historico-contagem">—</span></div>
+      <div class="tabela"><table><thead><tr><th>ID / Ciclo</th><th>Data/hora</th><th>Resultado</th><th>Classe</th><th>Confiança</th><th>Duração</th><th>Origem</th><th>Motivo</th><th>Serial</th><th>Evidência</th></tr></thead><tbody id="historico"></tbody></table></div>
+      <div class="paginacao"><button type="button" id="anterior">← Anterior</button><span id="pagina-numero">Página 1</span><button type="button" id="proxima">Próxima →</button></div>
+    </section>
+
+  </main>
+  <footer><span>ESTAÇÃO 03 · VISÃO COMPUTACIONAL</span><span>Flask · SQLite · YOLOv8 | Dados reais e simulados identificados</span></footer>
+</body>
+</html>

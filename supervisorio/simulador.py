@@ -7,11 +7,33 @@ if __package__ in (None, ''):
 import argparse
 import os
 import random
+import json
+import sqlite3
 import time
 from uuid import uuid4
 import config as cfg
 from ciclo import CicloInspecao
-from supervisorio.database import registrar_inspecao, publicar_estado
+from supervisorio.database import conexao_leitura, mesmo_banco, registrar_inspecao, publicar_estado
+
+
+def banco_da_simulacao():
+    destino = cfg.SIMULATION_DATABASE_PATH
+    if os.environ.get('ESTACAO3_DB') and not mesmo_banco(cfg.DATABASE_PATH, destino):
+        raise ValueError('O simulador usa apenas supervisorio/simulacao.db. Remova ESTACAO3_DB ou aponte para esse banco.')
+    if mesmo_banco(destino, cfg.REAL_DATABASE_PATH):
+        raise ValueError('O banco de simulação aponta para o arquivo de inspeções reais.')
+    if destino.exists():
+        with conexao_leitura(destino) as conn:
+            tabelas = {row['name'] for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")}
+            if 'inspecoes' in tabelas and conn.execute(
+                    "SELECT 1 FROM inspecoes WHERE origem IS NOT 'simulador' LIMIT 1").fetchone():
+                raise ValueError('O banco de simulação contém inspeções de outra origem.')
+            if 'estado_estacao' in tabelas:
+                estado = conn.execute('SELECT dados FROM estado_estacao WHERE id=1').fetchone()
+                if estado and json.loads(estado['dados']).get('origem') != 'simulador':
+                    raise ValueError('O banco de simulação contém estado de outra origem.')
+    return destino
 
 
 def simular_ciclo(cenario, rng=None):
@@ -46,7 +68,10 @@ def main():
     args = parser.parse_args()
     if args.quantidade < 1 or args.intervalo < 0:
         parser.error('Use quantidade >= 1 e intervalo >= 0.')
-    db_path = cfg.DATABASE_PATH if os.environ.get('ESTACAO3_DB') else cfg.ROOT_DIR / 'supervisorio/simulacao.db'
+    try:
+        db_path = banco_da_simulacao()
+    except (OSError, ValueError, sqlite3.Error) as exc:
+        parser.error(str(exc))
     rng, sessao = random.Random(args.seed), uuid4().hex
     adquirido = False
     estado = {'ativo': True, 'origem': 'simulador', 'estado': 'AGUARDANDO',
