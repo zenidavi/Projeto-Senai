@@ -1,0 +1,11 @@
+{% if abas_qualidade %}
+{% set abas = [('index', 'Operação'), ('ocorrencias.lista', 'Ocorrências'),
+               ('estacao3_analises.pagina_analises', 'Análises e relatórios'),
+               ('estacao3_analises.comparacao', 'Comparar períodos')] %}
+<nav class="abas-estacao" aria-label="Áreas da Estação 03">
+  {% for destino, rotulo in abas %}
+  {% set atual = request.endpoint == destino or (destino == 'ocorrencias.lista' and request.blueprint == 'ocorrencias') %}
+  <a href="{{ url_for(destino) }}"{% if atual %} aria-current="page"{% endif %}>{{ rotulo }}</a>
+  {% endfor %}
+</nav>
+{% endif %}

@@ -205,13 +205,13 @@ class AckTests(unittest.TestCase):
     def test_ack_correto_e_correlacionado(self):
         porta = PortaSimulada()
         ciclo = uuid4().hex
-        with patch.object(cfg, 'USE_SERIAL', True):
+        with patch.multiple(cfg, USE_SERIAL=True, SERIAL_REQUIRE_ACK=True):
             self.assertEqual(inferencia.transmitir_resultado(porta, 'OK', ciclo), 'confirmado')
         self.assertEqual(porta.timeout, 1)
 
     def test_ack_de_outro_ciclo_recusado(self):
         porta = PortaSimulada(correta=False)
-        with patch.object(cfg, 'USE_SERIAL', True), patch.object(cfg, 'SERIAL_ACK_TIMEOUT', .01), redirect_stdout(io.StringIO()):
+        with patch.multiple(cfg, USE_SERIAL=True, SERIAL_REQUIRE_ACK=True, SERIAL_ACK_TIMEOUT=.01), redirect_stdout(io.StringIO()):
             self.assertEqual(inferencia.transmitir_resultado(porta, 'NOK', uuid4().hex), 'sem_confirmacao')
 
     def test_inconclusivo_nao_enviado_como_nok(self):

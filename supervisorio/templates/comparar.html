@@ -1,0 +1,37 @@
+{% extends 'qualidade.html' %}
+{% block titulo %}Comparar períodos{% endblock %}
+{% macro numero(valor, unidade='') %}{{ (valor|string|replace('.', ',') ~ unidade) if valor is not none else '—' }}{% endmacro %}
+{% block conteudo %}
+<section class="painel">
+  <h2>Escolha as datas de cada período</h2>
+  <p>As datas inicial e final contam na consulta. O filtro de origem vale para os dois períodos.</p>
+  {% if erro %}<p class="erro" role="alert">{{ erro }}</p>{% endif %}
+  <form method="get" class="form-qualidade">
+    {% for chave, nome in [('inicio_a','A · Início'), ('fim_a','A · Fim'), ('inicio_b','B · Início'), ('fim_b','B · Fim')] %}
+    <label>{{ nome }}<input type="date" name="{{ chave }}" value="{{ request.args.get(chave,'') }}" required></label>
+    {% endfor %}
+    <label>Origem<select name="origem">
+      {% for chave, nome in [('', 'Todas'), ('real', 'Real'), ('simulador', 'Simulada')] %}
+      <option value="{{ chave }}"{% if request.args.get('origem','') == chave %} selected{% endif %}>{{ nome }}</option>
+      {% endfor %}
+    </select></label>
+    <div class="form-largo"><button type="submit">Comparar períodos</button></div>
+  </form>
+</section>
+{% if resultados %}
+<section class="painel">
+  <h2>Resultado da comparação</h2>
+  <div class="tabela"><table><thead><tr><th>Indicador</th><th>Período A</th><th>Período B</th><th>Variação (B − A)</th></tr></thead>
+  <tbody>
+  {% for nome, chave, un, delta in [('Inspeções','total','',''), ('NOK','nok','',''),
+      ('Taxa de NOK','taxa_nok_pct','%',' p.p.'), ('Inconclusivas','inconclusivos','',''),
+      ('Taxa de inconclusivas','taxa_inconclusivo_pct','%',' p.p.'), ('Tempo médio de inspeção','duracao_media_ms',' ms',' ms')] %}
+    {% set a = resultados[0][chave] %}{% set b = resultados[1][chave] %}
+    <tr><th scope="row">{{ nome }}</th><td>{{ numero(a, un) }}</td><td>{{ numero(b, un) }}</td>
+    <td>{{ numero((b - a)|round(1), delta) if a is not none and b is not none else '—' }}</td></tr>
+  {% endfor %}
+  </tbody></table></div>
+  <p class="nota">Taxa de NOK entre ciclos conclusivos (OK + NOK). Taxa de inconclusivas sobre o total de ciclos. p.p. significa pontos percentuais.</p>
+</section>
+{% endif %}
+{% endblock %}

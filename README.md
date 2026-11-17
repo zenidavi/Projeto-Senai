@@ -206,7 +206,7 @@ python supervisorio/simulador.py --cenario misto --quantidade 8 --intervalo 2 --
 
 Cenários: normal, sem-deteccao, camera-falha, serial-falha e misto. Cada ciclo apresenta fases aguardando/inspecionando/resultado; intervalo controla a pausa entre fases. Durações dos registros são simuladas. O modo misto alterna os quatro cenários. Não gera imagens fictícias nem confirmações físicas do Uno. Quando o simulador termina, a estação aparece SEM CONEXÃO e o histórico permanece.
 
-Se ESTACAO3_DB estiver definido no terminal do simulador, ele usa esse banco. Para outro banco, configure a mesma variável nos dois terminais. Há uma única sessão ativa por banco: inferência e simulador simultâneos são recusados enquanto houver atualização recente. Isso impede concorrência ativa, mas executar simulação num banco com histórico real ainda mistura os totais; use o banco separado.
+O simulador aceita somente `supervisorio/simulacao.db` e recusa um `ESTACAO3_DB` diferente. Se o arquivo de simulação já tiver registros ou estado de operação real, o simulador encerra antes de gravar. A inferência real também recusa o banco de simulação. O painel de demonstração identifica o modo simulado e desabilita a câmera web.
 
 Para voltar à operação real, pare os processos e execute `Remove-Item Env:ESTACAO3_DB` no terminal do Flask antes de reiniciar. Consulte GUIA_DEMONSTRACAO.md para um roteiro sem hardware.
 
