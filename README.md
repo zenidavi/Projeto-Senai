@@ -1,16 +1,36 @@
-# Estação 3 — inspeção de tampa SENAI / Volkswagen do Brasil
+# Estação 3 — Inspeção visual inteligente | SENAI Volkswagen
 
-A Estação 3 faz **detecção e classificação da condição da tampa como OK/NOK com YOLOv8 Object Detection**. A peça permanece parada durante a avaliação. A inferência roda localmente no PC. O Arduino apenas recebe o resultado; a interface física e o protocolo entre estações ainda dependem do professor.
+**Projeto acadêmico de automação industrial:** sistema de visão computacional para avaliar a condição visual de peças na Estação 3 de uma mesa giratória. A webcam USB fornece imagens ao Python/OpenCV; o YOLOv8 Object Detection identifica a condição da tampa; uma máquina de estados determina **OK**, **NOK** ou **INCONCLUSIVO**. O sistema mantém histórico em SQLite e disponibiliza um supervisório Flask. A comunicação com o Arduino é opcional e a integração final com a mesa ainda está em desenvolvimento.
+
+> **Importante — código publicado × protótipo local:** o repositório contém a base do sistema, testes, simulador e supervisório básico. O modelo treinado, os datasets, a câmera ao vivo no painel, o redesign de central de controle e os experimentos de relatórios foram desenvolvidos/testados em cópias **locais** e **não estão integralmente publicados nesta branch**. Não se deve interpretar a presença de funções no escopo como implementação disponível no GitHub.
 
 ## Estado do projeto
 
-| Parte | Situação |
+| Componente | Situação |
 |---|---|
-| Software, banco e supervisório | Implementados; 33 testes de software passaram |
-| Demonstração sem equipamento | Disponível pelo simulador de ciclos e falhas |
-| Dataset e modelo treinado da tampa | Pendentes |
-| Webcam e Arduino físicos | Ainda precisam de validação |
-| Integração com a mesa e outras estações | Aguardando definição do professor |
+| Captura, inferência, ciclos, SQLite, Flask e testes | Código disponível neste repositório |
+| Dataset da tampa e YOLOv8n treinado | Realizados e validados inicialmente no computador do SENAI; arquivos locais não versionados |
+| Teste com webcam e reconhecimento verde/OK, vermelho/NOK | Funcionou no piloto local |
+| Câmera ao vivo, botão web e visual de central de controle | Protótipos locais; não disponíveis integralmente neste repositório |
+| Painéis analíticos, filtros e relatórios PDF/CSV | Desenvolvidos como expansão local; integração no projeto principal ainda precisa ser verificada |
+| Serial com ACK PC ↔ Arduino | Implementação de software no repositório; protocolo final e hardware não validados de ponta a ponta |
+| I2C/controlador central e integração com outras estações | Pendente de integração e testes físicos |
+| Desempenho da prévia web | Versão experimental local limitada a 12 FPS; otimização pendente |
+
+## Piloto de treinamento realizado em 11/11/2026
+
+Foi treinado um **YOLOv8n** para duas classes, `tampa_ok` e `tampa_nok`, com imagens anotadas em bounding boxes no Roboflow. O treinamento local foi executado com Python/Ultralytics na CPU **Intel Core i5-14500**, resolução de 640 × 640, até 100 épocas, batch 16 e early stopping com patience 20. Terminou após **56 épocas (~14,7 minutos)** e gerou `runs/estacao3/tampa/weights/best.pt` (arquivo local, ignorado pelo Git).
+
+| Métrica final de validação | Valor |
+|---|---:|
+| Precision | 99,1% |
+| Recall | 100% |
+| mAP@50 | 99,5% |
+| mAP@50:95 | 87,3% |
+
+**Limitação dos resultados:** a validação teve **apenas 12 imagens (7 OK, 5 NOK)**. O valor de mAP não representa uma taxa de acerto garantida na operação real. Precisamos de um conjunto independente coletado em outras sessões, posições e iluminações, evitando imagens quase idênticas em treino e teste. A detecção de faces verde/vermelha valida o fluxo de software, **não** constitui detecção de defeitos físicos industriais.
+
+Os arquivos `best.pt`, `dataset/`, `dataset_roboflow/` e os bancos SQLite não são publicados no GitHub. Quem clonar este repositório precisará fornecer um modelo e um dataset próprios ou usar o simulador sem hardware.
 
 ![Dashboard da Estação 3 com registros simulados](docs/images/dashboard-ciclos.png)
 
@@ -81,7 +101,15 @@ GUIA_DEMONSTRACAO.md              Apresentação sem tampa/câmera/modelo
 VALIDACAO_CICLOS.md               Validação da versão atual
 ```
 
-As pastas dataset/, dataset_roboflow/, runs/ e o banco são criados/usados conforme necessário. Não há dataset rotulado nem best.pt incluídos. Todos os caminhos padrão partem da pasta de config.py, independentemente do diretório atual.
+As pastas dataset/, dataset_roboflow/, runs/ e o banco são criados/usados conforme necessário. O dataset rotulado e o `best.pt` do piloto existem na cópia local de desenvolvimento, mas **não estão incluídos no GitHub**. Todos os caminhos padrão partem da pasta de config.py, independentemente do diretório atual.
+
+## Situação do supervisório e das expansões locais
+
+A branch publicada atualmente expõe as rotas **`/`**, **`/api/status`**, **`/api/historico`** e **`/api/inspecoes/<id>/imagem`** (além dos arquivos estáticos). O dashboard consulta registros reais ou simulados do SQLite. As rotas de vídeo, comando web e relatórios avançados **não fazem parte desta versão publicada**.
+
+Na cópia de desenvolvimento foram testados transmissão de vídeo do OpenCV ao navegador, controle manual pelo painel, estilo visual de central industrial e ferramentas de análise/relatórios. Essas mudanças passaram por scripts experimentais e devem ser consolidadas, revisadas e testadas antes de sincronizar com esta branch. Não rode os scripts experimentais nem tente acessar `/analises` em um clone limpo esperando encontrar esses recursos.
+
+**Pendências de robustez identificadas no piloto:** no Windows do SENAI apareceram um `WinError 5` ao substituir o arquivo JPEG da prévia e um erro SQLite de banco somente leitura. O banco copiado para outro computador passou nos testes de integridade e escrita, mas isso **não demonstra** que o problema no PC do SENAI foi resolvido. A otimização da prévia atualmente limitada a **12 FPS** também permanece pendente.
 
 ## Instalar (Windows / PowerShell)
 
@@ -125,7 +153,7 @@ Verifique data.yaml: names, nc e caminhos train/val/test devem corresponder às 
 python treinar.py
 ```
 
-config.py concentra MODELO_BASE=yolov8n.pt, EPOCHS=100, IMG_SIZE=640, BATCH=16 e PATIENCE=20. O treinamento é de detecção; não troca para -cls. O peso base oficial pode ser baixado pelo Ultralytics no primeiro uso, se ausente. O dataset precisa ser fornecido pelo grupo.
+config.py concentra MODELO_BASE=yolov8n.pt, EPOCHS=100, IMG_SIZE=640, BATCH=16 e PATIENCE=20. O treinamento é de detecção; não troca para -cls. O peso base oficial pode ser baixado pelo Ultralytics no primeiro uso, se ausente. O dataset do piloto já foi preparado localmente, mas precisa ser fornecido por quem executar o projeto a partir do GitHub.
 
 Resultados ficam em runs/estacao3/tampa/. Para preservar treinos anteriores, Ultralytics pode criar tampa2/, tampa3/, etc. O programa imprime o **caminho efetivo de model.trainer.best**, em vez de assumir runs/detect/train. Copie esse caminho para MODEL_PATH em config.py. O padrão aponta para runs/estacao3/tampa/weights/best.pt. Mensagens orientam sobre YAML inexistente, dataset inválido, falha de carga e erro de treino. Ajuste BATCH se faltar memória. Dataset inválido pode envolver problemas que só aparecem durante o treinamento.
 
@@ -229,29 +257,39 @@ INCONCLUSIVO não é transmitido como OK/NOK; fica registrado localmente, com na
 
 Configure USE_SERIAL=True, SERIAL_PORT e BAUD_RATE. Feche o Monitor Serial antes de abrir Python. O Uno pode reiniciar ao abrir a USB; há espera configurável de 2 segundos. Falha de conexão/envio não encerra a avaliação local; o painel e o histórico mostram o problema. Reconexão exige reiniciar. Para testar o protocolo simples com um sketch antigo, SERIAL_REQUIRE_ACK=False usa OK/NOK, identificado como escrito_sem_ack, sem comprovar recepção.
 
-## IMPLEMENTADO
+## IMPLEMENTADO NESTE REPOSITÓRIO
 
-- Captura e treinamento existentes preservados, com correções documentadas.
-- Ciclos explícitos, estabilidade, prazo, cooldown e estados da estação.
-- OK/NOK separados de INCONCLUSIVO e falha técnica.
-- Histórico com ID único, duração, motivo, versão/hash dos pesos e imagem.
-- Heartbeat local, detecção de atualização obsoleta e sessão única por banco.
-- Dashboard com três resultados e acesso às imagens.
-- Simulador explícito de ciclos e falhas em banco separado por padrão.
-- Serial USB opcional, ACK correlacionado e sketch compatível com teste manual.
-- Testes de software; consulte VALIDACAO_CICLOS.md para a versão atual.
+- Captura de imagens, preparação de dataset e scripts de treinamento/inferência YOLOv8.
+- Máquina de estados com ciclos identificados, estabilidade, timeout, cooldown e resultado INCONCLUSIVO separado de falhas técnicas.
+- Histórico SQLite com ID único, duração, motivo, versão/hash dos pesos, evidências de imagem e situação do envio Serial.
+- Estado de estação publicado por heartbeat; identificação de atualização obsoleta e proteção de sessão ativa por banco.
+- Supervisório Flask com totais, três resultados, histórico, dados da estação e acesso às imagens.
+- Simulador explícito com banco separado por padrão, sem controle de hardware.
+- Serial USB opcional com protocolo de ACK correlacionado no código e sketch Arduino para teste com LED.
+- Testes de software existentes no diretório `tests/` (a execução física do hardware não é coberta).
 
-## FUTURO / PENDENTE
+## VALIDADO NO PILOTO LOCAL, MAS NÃO PUBLICADO INTEGRALMENTE
 
-- Dataset rotulado real, treinamento e avaliação de precisão/falsos OK/falsos NOK.
-- Calibração de câmera, iluminação, limiar e estabilidade na estação real.
-- Gatilho definitivo de inspeção e identificação de peças pela mesa.
-- Comunicação definitiva entre estações, a ser definida pelo professor; I2C não foi implementado.
-- Integração com o supervisório geral.
-- Associação modelo do carro ↔ tipo/cor de tampa.
-- Integração física final da mesa e eventuais atuadores.
+- Dataset com classes `tampa_ok`/`tampa_nok`, treinamento YOLOv8n e geração de `best.pt`.
+- Inferência com webcam USB e acionamento por `I`, reconhecendo as condições verde/OK e vermelho/NOK.
+- Supervisório local recebendo registros da inferência pelo SQLite.
+- Transmissão experimental de câmera ao vivo e visual industrial do painel; implementação local diferente da branch publicada.
+- Protótipos de análises/relatórios PDF/CSV e botão web, ainda sujeitos à consolidação e testes integrados.
 
-Não há controle de robôs, outras estações, atuadores ou protocolo definitivo da mesa.
+## PRÓXIMAS ETAPAS / PENDENTE
+
+1. **Consolidar o código local:** unificar os scripts experimentais de câmera e controle com o Flask principal, sem abrir a webcam duas vezes; manter a operação por `inferencia.py` + `supervisorio/app.py`. Revisar e validar os relatórios e o redesign.
+2. **Validar a IA independentemente:** capturar imagens novas em outra sessão, dividir por sessão, gerar matriz de confusão e medir falsos OK/NOK.
+3. **Definir e simular contrato de comunicação:** início, resultado, ACK, erro e heartbeat com ID de ciclo, timeout e proteção contra duplicação. O controlador central deve impedir aprovação por ausência de resultado.
+4. **Integrar o Arduino real:** testar serial, I2C, controle de ciclo e interação com a mesa em conjunto com os grupos responsáveis. O supervisor não substitui intertravamentos físicos.
+5. **QR Code e rastreabilidade:** reconhecer a identidade esperada da peça e comparar com a identificação visual.
+6. **Novos protótipos e dataset:** ID.4, ID. Buzz e ID. Polo fictício; avaliar diferentes abordagens de modelo usando o mesmo conjunto de teste independente.
+7. **Desempenho:** medir captura, inferência, renderização, JPEG e transmissão; remover gargalos e avaliar backends otimizados para CPU. A prévia web experimental tem teto de **12 FPS**, não uma medição do FPS máximo do YOLO.
+8. **Supervisório avançado:** diagnósticos, filtros, gráficos temporais e exportação CSV/PDF com dados existentes, distinguindo registros reais de simulados.
+
+**Extensões de menor prioridade:** estoque físico/virtual, previsão de demanda, autenticação avançada, gestão de modelos e realidade aumentada. Não devem atrasar a inspeção e a integração física.
+
+Não existe nesta branch controle definitivo dos robôs, atuadores de outras estações nem protocolo I2C final da mesa giratória.
 
 ## Testes de software
 
