@@ -6,12 +6,15 @@
   <title>Estação 3 · Supervisório</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script defer src="{{ url_for('static', filename='dashboard.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='camera.css') }}">
 </head>
 <body data-poll-interval="{{ poll_interval }}">
   <header><div><span class="eyebrow">SENAI / VOLKSWAGEN DO BRASIL</span>
     <h1>Estação 03 <span>Inspeção de tampa</span></h1></div>
-    <div id="conexao" role="status">Conectando ao painel…</div></header>
+    <div id="conexao" role="status">Conectando ao painel…</div>  <nav class="est3-analises-nav" style="padding:10px 20px"><a href="/analises">Dados e relatórios</a></nav>
+</header>
   <main>
+    {% include 'camera_widget.html' %}
     <section class="painel" aria-labelledby="estacao-titulo">
       <div class="titulo-historico"><h2 id="estacao-titulo">Estado atual da estação</h2><span id="estacao-origem">—</span></div>
       <div id="estacao-estado" class="estado-estacao" aria-live="polite">SEM CONEXÃO</div>
@@ -51,5 +54,6 @@
     <p class="nota">O estado da estação usa atualizações do processo de inspeção. O resultado da peça permanece no histórico quando a estação para. INCONCLUSIVO não significa NOK. Percentuais consideram todos os ciclos.</p>
   </main>
   <footer>ESTAÇÃO 3 · VISÃO COMPUTACIONAL <span>YOLOv8 Object Detection / SQLite / Serial USB</span></footer>
+  <script defer src="{{ url_for('static', filename='camera.js') }}"></script>
 </body>
 </html>

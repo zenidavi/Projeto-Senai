@@ -50,6 +50,10 @@ def create_app(db_path=None, image_dir=IMAGE_DIR):
         app.logger.error("Falha SQLite: %s", erro)
         return jsonify(erro="Banco indisponível. Tente novamente."), 503
 
+    from supervisorio.camera_bridge import registrar_rotas
+    from supervisorio.analises import registrar_analises
+    registrar_rotas(app, db_path=db_path)
+    registrar_analises(app, db_path=db_path)
     return app
 
 

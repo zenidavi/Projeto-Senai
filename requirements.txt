@@ -2,3 +2,4 @@ ultralytics
 opencv-python
 pyserial
 flask
+reportlab

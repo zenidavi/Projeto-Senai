@@ -2,7 +2,7 @@
 
 **Projeto acadêmico de automação industrial:** sistema de visão computacional para avaliar a condição visual de peças na Estação 3 de uma mesa giratória. A webcam USB fornece imagens ao Python/OpenCV; o YOLOv8 Object Detection identifica a condição da tampa; uma máquina de estados determina **OK**, **NOK** ou **INCONCLUSIVO**. O sistema mantém histórico em SQLite e disponibiliza um supervisório Flask. A comunicação com o Arduino é opcional e a integração final com a mesa ainda está em desenvolvimento.
 
-> **Importante — código publicado × protótipo local:** o repositório contém a base do sistema, testes, simulador e supervisório básico. O modelo treinado, os datasets, a câmera ao vivo no painel, o redesign de central de controle e os experimentos de relatórios foram desenvolvidos/testados em cópias **locais** e **não estão integralmente publicados nesta branch**. Não se deve interpretar a presença de funções no escopo como implementação disponível no GitHub.
+> **Consolidação publicada:** o repositório agora integra prévia de câmera no supervisório, botão local de inspeção manual sem Serial, página `/analises` e relatórios CSV/PDF. O redesign completo de central de controle, os pesos `best.pt` e os datasets continuam fora desta branch. A integração com webcam e Arduino físicos ainda precisa ser validada.
 
 ## Estado do projeto
 
@@ -11,8 +11,9 @@
 | Captura, inferência, ciclos, SQLite, Flask e testes | Código disponível neste repositório |
 | Dataset da tampa e YOLOv8n treinado | Realizados e validados inicialmente no computador do SENAI; arquivos locais não versionados |
 | Teste com webcam e reconhecimento verde/OK, vermelho/NOK | Funcionou no piloto local |
-| Câmera ao vivo, botão web e visual de central de controle | Protótipos locais; não disponíveis integralmente neste repositório |
-| Painéis analíticos, filtros e relatórios PDF/CSV | Desenvolvidos como expansão local; integração no projeto principal ainda precisa ser verificada |
+| Câmera ao vivo e botão web sem Serial | Código integrado nesta branch; validação com webcam pendente |
+| Redesign completo do supervisório | Versão local ainda não sincronizada ao GitHub |
+| Página de análises, filtros e relatórios PDF/CSV | Código integrado ao Flask, com novos testes offline |
 | Serial com ACK PC ↔ Arduino | Implementação de software no repositório; protocolo final e hardware não validados de ponta a ponta |
 | I2C/controlador central e integração com outras estações | Pendente de integração e testes físicos |
 | Desempenho da prévia web | Versão experimental local limitada a 12 FPS; otimização pendente |
@@ -105,12 +106,33 @@ As pastas dataset/, dataset_roboflow/, runs/ e o banco são criados/usados confo
 
 ## Situação do supervisório e das expansões locais
 
-A branch publicada atualmente expõe as rotas **`/`**, **`/api/status`**, **`/api/historico`** e **`/api/inspecoes/<id>/imagem`** (além dos arquivos estáticos). O dashboard consulta registros reais ou simulados do SQLite. As rotas de vídeo, comando web e relatórios avançados **não fazem parte desta versão publicada**.
+A branch publicada mantém as rotas originais e agora inclui as rotas de vídeo, comando web e análises descritas acima.
 
-Na cópia de desenvolvimento foram testados transmissão de vídeo do OpenCV ao navegador, controle manual pelo painel, estilo visual de central industrial e ferramentas de análise/relatórios. Essas mudanças passaram por scripts experimentais e devem ser consolidadas, revisadas e testadas antes de sincronizar com esta branch. Não rode os scripts experimentais nem tente acessar `/analises` em um clone limpo esperando encontrar esses recursos.
+Na cópia de desenvolvimento foram testados transmissão de vídeo do OpenCV ao navegador, controle manual pelo painel, estilo visual de central industrial e ferramentas de análise/relatórios. Uma primeira consolidação já está disponível nesta branch, inclusive `/analises`. O redesign completo local ainda deve ser revisado antes de sincronização.
 
 **Pendências de robustez identificadas no piloto:** no Windows do SENAI apareceram um `WinError 5` ao substituir o arquivo JPEG da prévia e um erro SQLite de banco somente leitura. O banco copiado para outro computador passou nos testes de integridade e escrita, mas isso **não demonstra** que o problema no PC do SENAI foi resolvido. A otimização da prévia atualmente limitada a **12 FPS** também permanece pendente.
 
+## Consolidação web publicada — 18/11/2026
+
+A **webcam continua exclusiva de `inferencia.py`**. O Flask em `supervisorio/app.py` apenas lê os JPEGs produzidos pela inferência, sem tentar abrir uma segunda câmera. Cada frame é gravado com nome único para evitar substituir o arquivo enquanto o Windows o lê.
+
+Execute os comandos nos respectivos terminais, com o ambiente virtual ativo:
+
+```powershell
+python supervisorio/app.py
+# Em outro terminal, somente com webcam e best.pt:
+python inferencia.py
+```
+
+O painel abre em `http://127.0.0.1:5000/`, e os relatórios em `http://127.0.0.1:5000/analises`.
+
+Rotas adicionais: `/api/video/frame`, `/api/video/controle/estado`, `/api/video/controle/inspecionar`, `/api/analises/dados`, `/api/analises/opcoes`, `/api/analises/diagnostico`, `/api/analises/exportar.csv` e `/api/analises/relatorio.pdf`.
+
+A câmera retorna **SEM CONEXÃO** quando a inferência não está rodando. O botão web exige modo manual, IA online e `USE_SERIAL=False`; ele **não controla a mesa nem confirma um ACK do Arduino**. Os relatórios são gerados exclusivamente a partir do SQLite e identificam a origem real/simulada.
+
+**FPS:** 12 é o teto configurado para a prévia web, não um benchmark da inferência. A otimização e instrumentação real de captura/inferência/transmissão permanecem pendentes.
+
+**Diferença entre código publicado e PC local:** o redesign completo e scripts experimentais mais recentes do PC ainda precisam de revisão antes de sincronização. Esta atualização não publica pesos, datasets nem bancos SQLite.
 ## Instalar (Windows / PowerShell)
 
 Abra o terminal na pasta do projeto. Recomenda-se Python 3.11 ou 3.12 para maior compatibilidade com PyTorch/Ultralytics. A disponibilidade de dependências deve ser verificada no PC de operação.

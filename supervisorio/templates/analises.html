@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Estação 03 | Análises e relatórios</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,Segoe UI,Arial,sans-serif;background:#0b1422;color:#eaf3ff}
+*{box-sizing:border-box}body{margin:0}header{padding:28px max(24px,5vw);background:#102038;border-bottom:1px solid #27415d;display:flex;justify-content:space-between;align-items:center;gap:20px}
+header small{letter-spacing:.16em;color:#7dc5ed}h1{margin:8px 0;font-size:clamp(24px,3vw,38px)}a{color:#83cbff}nav a{display:inline-block;padding:10px 16px;border:1px solid #365575;border-radius:8px;text-decoration:none}
+main{width:min(1440px,94vw);margin:30px auto 50px}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card,.painel{background:#13243a;border:1px solid #29435c;border-radius:13px;padding:21px}
+.card span{color:#a7c1d4;font-size:.85rem}.card strong{display:block;font-size:2.1rem;margin:12px 0}.verde{color:#37d19b}.vermelho{color:#ff7777}.amarelo{color:#ffd17e}
+h2{font-size:1.25rem;margin:0 0 16px}section{margin-bottom:20px}label{display:flex;flex-direction:column;gap:8px;font-size:.84rem;color:#b3c7d9}
+form{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;align-items:end}
+input,select,button{font:inherit;background:#0d1b2b;color:#eaf3ff;border:1px solid #3d5a75;padding:11px;border-radius:8px;width:100%;min-width:0}
+button{cursor:pointer;background:#125d92}button.secondary{background:#1b354e}button:disabled{opacity:.4;cursor:default}
+.links{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}.links a{border:1px solid #46627c;padding:10px 14px;border-radius:9px;text-decoration:none}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:18px}.barras{display:grid;gap:13px}
+.barra-row{display:grid;grid-template-columns:115px 1fr 54px;gap:10px;align-items:center;font-size:.9rem}
+.track{height:12px;background:#07111c;border-radius:99px;overflow:hidden}.fill{height:100%;background:#3e9ddc}.fill.ok{background:#30bd86}.fill.nok{background:#ed6479}.fill.inc{background:#f6bd59}
+table{width:100%;border-collapse:collapse;font-size:.86rem}th,td{text-align:left;padding:10px 9px;border-bottom:1px solid #2a4056;overflow-wrap:anywhere}th{color:#a9bfce} .scroll{overflow:auto}
+small.muted,.nota{color:#92aec3;font-size:.85rem;line-height:1.6}.erro{color:#ff9a9a;margin:12px 0}
+#tendencia{display:flex;gap:8px;align-items:end;height:145px;overflow-x:auto}
+.dia{min-width:43px;display:flex;align-items:center;flex-direction:column;gap:6px;font-size:.72rem;color:#93abc2}
+.coluna{width:28px;background:#499cc9;border-radius:5px 5px 0 0;min-height:2px}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}form{grid-template-columns:repeat(3,1fr)}.duas{grid-template-columns:1fr}}
+@media(max-width:600px){header{display:block}.grid{grid-template-columns:1fr 1fr}form{grid-template-columns:1fr 1fr}.card{padding:14px}.card strong{font-size:1.5rem}}
+</style>
+</head>
+<body>
+<header><div><small>SENAI · VOLKSWAGEN | MESA GIRATÓRIA</small><h1>Estação 03 · Análises e relatórios</h1><span class="nota">Histórico do SQLite e indicadores de inspeção</span></div><nav><a href="/">Voltar ao supervisório</a></nav></header>
+<main>
+<section class="painel"><h2>Filtros de produção</h2><form id="filtros">
+<label>De<input type="date" name="inicio"></label><label>Até<input type="date" name="fim"></label>
+<label>Resultado<select name="resultado"><option value="">Todos</option><option>OK</option><option>NOK</option><option>INCONCLUSIVO</option></select></label>
+<label>Origem<select name="origem"><option value="">Todas</option><option value="real">Real</option><option value="simulador">Simulação</option></select></label>
+<label>Classe<select id="classe" name="classe"><option value="">Todas</option></select></label>
+<label>Versão do modelo<select id="versao" name="versao"><option value="">Todas</option></select></label>
+<button type="submit">Aplicar filtros</button><button type="button" id="limpar" class="secondary">Limpar</button>
+</form><div class="links"><a id="csv" href="/api/analises/exportar.csv">Exportar CSV</a><a id="pdf" href="/api/analises/relatorio.pdf">Gerar PDF</a></div><p id="erro" class="erro" hidden></p></section>
+<section class="grid">
+<div class="card"><span>Inspeções</span><strong id="total">—</strong></div>
+<div class="card"><span>Conformidade sobre ciclos conclusivos</span><strong id="conformidade" class="verde">—</strong></div>
+<div class="card"><span>OK</span><strong id="ok" class="verde">—</strong></div>
+<div class="card"><span>NOK</span><strong id="nok" class="vermelho">—</strong></div>
+<div class="card"><span>Inconclusivos</span><strong id="inconclusivos" class="amarelo">—</strong></div>
+<div class="card"><span>Confiança média (OK/NOK)</span><strong id="confianca">—</strong></div>
+<div class="card"><span>Duração média do ciclo</span><strong id="duracao">—</strong></div>
+<div class="card"><span>Última atualização da estação</span><strong id="estacao" style="font-size:1.1rem">—</strong></div>
+</section>
+<div class="duas">
+<section class="painel"><h2>Distribuição de resultados</h2><div class="barras" id="distribuicao"></div></section>
+<section class="painel"><h2>Inspeções por dia</h2><div id="tendencia"></div><small class="muted">Dias sem inspeção não são mostrados; até 30 datas com dados.</small></section>
+</div>
+<div class="duas">
+<section class="painel"><h2>Classes</h2><div class="barras" id="classes"></div></section>
+<section class="painel"><h2>Comunicação</h2><div class="barras" id="comunicacao"></div><p class="nota">Um resultado OK sem ACK não libera a peça no controlador físico.</p></section>
+</div>
+<section class="painel"><h2>Histórico detalhado</h2><div class="scroll"><table><thead><tr><th>ID</th><th>Data</th><th>Resultado</th><th>Classe</th><th>Confiança</th><th>Duração</th><th>Origem</th><th>Serial</th><th>Imagem</th></tr></thead><tbody id="linhas"></tbody></table></div><div class="links"><button type="button" id="anterior">Anterior</button><span id="pagina">Página 1</span><button type="button" id="proxima">Próxima</button></div></section>
+<section class="painel"><h2>Diagnóstico do piloto</h2><p id="diagnostico" class="nota">Consultando estado…</p><p class="nota">FPS de inferência e latência ainda não instrumentados. A prévia web experimental é limitada a 12 FPS. O modelo, o controlador e o Arduino são sistemas distintos.</p></section>
+</main>
+<script>
+"use strict";
+const el=x=>document.getElementById(x),form=el("filtros");
+let pagina=1,ultimo=1;
+const format=(v,s="")=>v===null||v===undefined?"—":String(v)+s;
+function tabela(nome,itens){const box=el(nome);box.replaceChildren();const maior=Math.max(1,...itens.map(x=>x.quantidade||0));for(const x of itens){const row=document.createElement("div");row.className="barra-row";const label=document.createElement("span");label.textContent=x.categoria||"Sem valor";const trilho=document.createElement("div");trilho.className="track";const fill=document.createElement("div");fill.className="fill";fill.style.width=(100*(x.quantidade||0)/maior)+"%";trilho.append(fill);const qtd=document.createElement("b");qtd.textContent=x.quantidade;row.append(label,trilho,qtd);box.append(row)}}
+function parametros(){const v=new URLSearchParams(new FormData(form));for(const [k,x] of [...v])if(!x)v.delete(k);return v}
+async function api(url){const r=await fetch(url,{cache:"no-store"});if(!r.ok){const e=await r.json().catch(()=>({}));throw Error(e.erro||"HTTP "+r.status)}return r.json()}
+async function consultar(){const p=parametros();p.set("pagina",pagina);p.set("por_pagina",30);el("erro").hidden=true;try{const d=await api("/api/analises/dados?"+p);const r=d.resumo;
+for(const k of ["total","ok","nok","inconclusivos"])el(k).textContent=r[k];
+el("conformidade").textContent=format(r.conformidade_pct,"%");el("confianca").textContent=format(r.confianca_media_pct,"%");el("duracao").textContent=format(r.duracao_media_ms," ms");
+tabela("distribuicao",[{categoria:"OK",quantidade:r.ok},{categoria:"NOK",quantidade:r.nok},{categoria:"Inconclusivo",quantidade:r.inconclusivos}]);
+tabela("classes",d.grupos.classes);tabela("comunicacao",d.grupos.comunicacao);
+const t=el("tendencia");t.replaceChildren();const max=Math.max(1,...d.tendencia.map(x=>x.total));for(const dia of d.tendencia){const c=document.createElement("div");c.className="dia";c.title=dia.data+": "+dia.total+" inspeções";const bar=document.createElement("div");bar.className="coluna";bar.style.height=(120*dia.total/max)+"px";const lab=document.createElement("span");lab.textContent=dia.data.slice(5);c.append(bar,lab);t.append(c)}
+const corpo=el("linhas");corpo.replaceChildren();for(const item of d.historico){const tr=document.createElement("tr");for(const k of ["id","timestamp","resultado","classe_detectada","confianca","duracao_ms","origem","serial_status"]){const td=document.createElement("td");let v=item[k];td.textContent=k==="confianca"&&v!==null?(100*v).toFixed(1)+"%":format(v);tr.append(td)}const img=document.createElement("td");if(item.imagem_path){const a=document.createElement("a");a.href="/api/inspecoes/"+item.id+"/imagem";a.textContent="Imagem";a.target="_blank";a.rel="noopener";img.append(a)}else img.textContent="—";tr.append(img);corpo.append(tr)}
+ultimo=d.paginas;el("pagina").textContent="Página "+pagina+" de "+ultimo;el("anterior").disabled=pagina===1;el("proxima").disabled=pagina>=ultimo;
+const url=parametros().toString();el("csv").href="/api/analises/exportar.csv?"+url;el("pdf").href="/api/analises/relatorio.pdf?"+url;
+}catch(e){el("erro").textContent=e.message;el("erro").hidden=false}}
+form.addEventListener("submit",e=>{e.preventDefault();pagina=1;consultar()});
+el("limpar").onclick=()=>{form.reset();pagina=1;consultar()};
+el("anterior").onclick=()=>{if(pagina>1){pagina--;consultar()}};
+el("proxima").onclick=()=>{if(pagina<ultimo){pagina++;consultar()}};
+(async()=>{try{const d=await api("/api/analises/opcoes");for(const [id,chave] of [["classe","classes"],["versao","versoes"]])for(const valor of d[chave]){const o=document.createElement("option");o.value=valor;o.textContent=valor;el(id).append(o)}}catch{}consultar()})();
+(async function diag(){try{const d=await api("/api/analises/diagnostico");el("estacao").textContent=d.online?d.estado:"Sem conexão";el("diagnostico").textContent="Câmera: "+format(d.camera)+" · IA: "+format(d.modelo)+" · Serial: "+format(d.serial)+" · FPS inferência: "+format(d.fps_inferencia)}catch{el("diagnostico").textContent="Diagnóstico indisponível"}finally{setTimeout(diag,3000)}})();
+</script>
+</body>
+</html>

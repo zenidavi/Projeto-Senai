@@ -1,0 +1,15 @@
+<section id="estacao3-camera-supervisorio" class="painel camera-web-painel" data-token="{{ camera_token|default('') }}">
+  <div class="camera-web-head">
+    <h2>Câmera ao vivo · YOLOv8</h2>
+    <span id="camera-web-status" role="status">Aguardando inferência</span>
+  </div>
+  <div class="camera-web-view">
+    <img id="camera-web-imagem" alt="Imagem da câmera de inspeção com detecções da IA" hidden>
+    <p id="camera-web-placeholder">Sem câmera conectada. Inicie <code>python inferencia.py</code> para visualizar a prévia.</p>
+  </div>
+  <div class="camera-web-actions">
+    <div><strong>Inspeção manual</strong><p id="camera-web-controle-estado">Consultando o estado da estação…</p></div>
+    <button type="button" id="camera-web-iniciar" disabled>Iniciar inspeção</button>
+  </div>
+  <small>Este botão só funciona no modo manual com USE_SERIAL=False. O comando não equivale à confirmação do Arduino.</small>
+</section>

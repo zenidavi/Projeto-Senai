@@ -361,4 +361,5 @@ def main():
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    from supervisorio.camera_bridge import iniciar_ia
+    raise SystemExit(iniciar_ia(main))
