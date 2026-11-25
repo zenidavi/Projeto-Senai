@@ -1,0 +1,71 @@
+SENAI / VW - Estacoes 2 e 3 no mesmo Arduino Uno R3
+===================================================
+
+VERSAO DE BANCADA - NAO CONECTAR AO MESTRE OU AO MOTOR NESTA ETAPA.
+
+Arquivos:
+- Estacoes_2_3_Integradas.ino = firmware do Uno compartilhado
+- ler_tensao.py = leitura de TENSAO;valor;resultado em Serial
+- teste_comunicacao.py = simulacao de START/INICIO/RESULTADO SEM camera
+
+1) ELETRICA (APENAS COM O SISTEMA DESENERGIZADO):
+- A0: ponto central do divisor de tensao 10 kOhm / 10 kOhm.
+- Divisor: +pilha -> R1=10k -> ponto central -> R2=10k -> negativo da pilha.
+- Ponto central -> A0. Negativo da pilha -> GND do Uno.
+- Para uma pilha de 1,5V, o A0 deve receber aprox. 0,75V.
+- Referencia analogica: INTERNAL ~1,1V. Acima de ~2,2V na pilha,
+  a medicao satura. O pino A0 deve permanecer dentro dos limites eletricos
+  do Arduino. NAO conectar baterias de tracao ou tensoes industriais.
+- R1, R2 e Vref devem ser conferidos/calibrados com multimetro.
+- A bateria nominal de 3 V ainda exige ajuste de divisor e calibracao.
+
+2) TCRT5000 NU, OPCIONAL NESTA PRIMEIRA ETAPA:
+- Conferir polaridade dos 4 terminais no datasheet, antes de ligar.
+- LED IR: +5V -> resistor 330 ohm -> anodo; catodo -> GND.
+- Fototransistor: emissor -> GND, coletor -> D2.
+- Pull-up de 10k entre D2 e +5V (INPUT_PULLUP interno tambem ativo).
+- Sem TCRT conectado, D2 nao deve flutuar por causa do pull-up interno.
+- A deteccao tipicamente produz LOW, sujeito a teste e calibracao.
+
+3) SAIDA PARA O MESTRE:
+- D8 = LOW no repouso; produz pulso HIGH de 300 ms apos aceitar
+  RESULTADO de um ciclo identificado, inclusive INCONCLUSIVO.
+- D8 fica desconectado do mestre neste teste. LED interno D13 acompanha pulso.
+- Antes de conectar o mestre, conferir compatibilidade 5V/GND, deteccao de
+  borda, duracao de pulso e intertravamentos fisicos.
+- NUNCA conectar cargas ou motor diretamente a D8.
+
+4) GRAVAR:
+- Arduino IDE: abrir Estacoes_2_3_Integradas.ino
+- Ferramentas -> Placa -> Arduino Uno; escolher porta COM; clicar Carregar.
+- Isso substitui o firmware gravado; confirmar que a placa e a do grupo.
+- Monitor Serial: 9600 baud; devem aparecer mensagens TENSAO a cada ~1s.
+
+5) LER PELO PYTHON (fechar Monitor Serial primeiro):
+  .\.venv\Scripts\python.exe Estacoes_2_3_Integradas\ler_tensao.py COM10
+- Trocar COM10 pela porta da sua placa.
+- Para registrar leituras experimentais, ainda nao calibradas:
+  .\.venv\Scripts\python.exe Estacoes_2_3_Integradas\ler_tensao.py COM10 --gravar
+- Banco separado: Estacoes_2_3_Integradas\tensao_estacao2.db
+- Abra o supervisório em /tensao. O painel marca saturacao como nao validada.
+- NAO rodar este leitor junto com inferencia.py caso ela esteja usando a
+  mesma porta COM; uma unica aplicacao controla a porta Serial.
+- USE_SERIAL=False na inferencia durante este teste.
+
+6) PROTOCOLO BANCADA (SEM MOTOR):
+Arduino -> PC: TENSAO;<V>;<APROVADO|REPROVADO>
+Arduino -> PC: START;<seq> (apos deteccao do TCRT5000)
+PC -> Arduino: INICIO;<seq>;<uuid32>
+Arduino -> PC: PRONTO;<uuid32>
+PC -> Arduino: RESULTADO;<uuid32>;<OK|NOK|INCONCLUSIVO>
+Arduino -> PC: ACK;<uuid32>;<resultado>
+Arduino -> PC: PULSO_CONCLUIDO;<uuid32> (apos pulso D8)
+
+- Para testar o protocolo com respostas SIMULADAS de camera (SEM mestre):
+  .\.venv\Scripts\python.exe Estacoes_2_3_Integradas\teste_comunicacao.py COM10
+- Esse script simula OK/NOK/INCONCLUSIVO. NAO e a inferencia real.
+
+7) INTEGRACAO PYTHON:
+- Aba de tensao implementada no Flask. A conexao Serial ainda e separada.
+- O processo Python definitivo devera ler a mesma porta USB para tratar
+  tanto TENSAO quanto START/RESULTADO, sem leitores simultaneos.

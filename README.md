@@ -39,6 +39,17 @@ O firmware de bancada usa A0, divisor 10 kΩ/10 kΩ, referência interna nominal
 
 O painel marca valores próximos ao teto nominal (2,19 V ou superiores) como saturados e não validados. A leitura de 0 V sem bateria não é uma reprovação de uma peça identificada. O gráfico mostra até 120 amostras contínuas, não a contagem de peças.
 
+### Receber as medições no supervisório
+
+Grave `Estacoes_2_3_Integradas/Estacoes_2_3_Integradas.ino` na placa Uno. Feche o Monitor Serial. Em um terminal separado, na raiz:
+
+```powershell
+.\.venv\Scripts\python.exe -m serial.tools.list_ports -v
+.\.venv\Scripts\python.exe Estacoes_2_3_Integradas\ler_tensao.py COM10 --gravar
+```
+
+Substitua COM10 pela porta encontrada no seu PC. Sem `--gravar`, as leituras aparecem apenas no terminal. O SQLite de tensão fica em `Estacoes_2_3_Integradas/tensao_estacao2.db`; os dados não são versionados. Os registros de bancada não são aprovação metrológica. Consulte [instruções do Arduino compartilhado](Estacoes_2_3_Integradas/LEIA-ME.txt).
+
 ## Integração física prevista
 
 A0: divisor de tensão. D2: TCRT5000 sem módulo, com circuito externo e pull-up. D8: pulso HIGH provisório de 300 ms, após resultado de ciclo identificado (OK, NOK ou INCONCLUSIVO), para o mestre. Sem resposta do PC, não deve liberar a mesa. A duração e a detecção de borda devem ser combinadas com o grupo do mestre. O Arduino não substitui intertravamentos físicos.
