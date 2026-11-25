@@ -25,3 +25,11 @@ Thumbs.db
 *.db-wal
 *.db-shm
 inspecoes_imagens/
+
+# Bancos e backups locais
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+backup_*/
+.venv*/

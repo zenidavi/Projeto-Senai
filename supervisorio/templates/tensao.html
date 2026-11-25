@@ -1,0 +1,21 @@
+{% extends 'qualidade.html' %}
+{% block titulo %}Estação 2 · Tensão{% endblock %}
+{% block conteudo %}
+<link rel="stylesheet" href="{{ url_for('static', filename='tensao.css') }}">
+<script defer src="{{ url_for('static', filename='tensao.js') }}"></script>
+<section class="painel">
+  <div class="titulo-linha"><div><span class="eyebrow">ESTAÇÃO 02 · ARDUINO UNO</span><h2>Monitoramento elétrico</h2></div><span class="status offline" id="tensao-conexao">Aguardando leitor</span></div>
+  <p id="tensao-mensagem" role="status">Aguardando dados reais do Arduino.</p>
+  <div class="metricas tensao-metricas">
+    <div class="kpi"><span>Última tensão recebida</span><strong id="tensao-valor">—</strong><small id="tensao-horario">Sem leituras</small></div>
+    <div class="kpi"><span>Avaliação recebida</span><strong id="tensao-resultado" class="tensao-resultado">—</strong><small>Calibração pendente</small></div>
+    <div class="kpi"><span>Limite original</span><strong>1,10 V</strong><small>Não ajustado para a bateria de 3 V</small></div>
+    <div class="kpi"><span>Faixa nominal atual</span><strong>2,20 V</strong><small>Leituras próximas ao teto: saturação</small></div>
+  </div>
+  <p class="nota">O status é o informado pelo firmware, não uma certificação de qualidade. Sem sensor de presença na Estação 2, 0 V não prova que uma bateria foi reprovada. Dados contínuos, não contagem de peças.</p>
+</section>
+<section class="painel"><h2>Histórico de tensão</h2><p>Últimas 120 amostras recebidas; linha horizontal: limite original de 1,10 V.</p>
+<svg id="tensao-grafico" viewBox="0 0 720 230" role="img" aria-label="Gráfico das amostras de tensão" class="tensao-grafico"></svg>
+<p id="tensao-grafico-nota" class="nota">Nenhuma medição.</p></section>
+<section class="painel"><h2>Leituras recebidas</h2><div class="tabela"><table><thead><tr><th>Horário</th><th>Tensão</th><th>Resultado do Arduino</th><th>Validação</th><th>Porta</th></tr></thead><tbody id="tensao-historico"><tr><td colspan="5">Nenhuma medição</td></tr></tbody></table></div></section>
+{% endblock %}

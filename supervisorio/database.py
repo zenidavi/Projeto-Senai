@@ -9,6 +9,37 @@ from uuid import uuid4
 from config import DATABASE_PATH, STATION_STALE_SECONDS
 
 
+def mesmo_banco(primeiro, segundo):
+    primeiro, segundo = Path(primeiro), Path(segundo)
+    if primeiro.resolve() == segundo.resolve():
+        return True
+    try:
+        return primeiro.samefile(segundo)
+    except FileNotFoundError:
+        return False
+
+
+@contextmanager
+def conexao_leitura(db_path, *, preparar=False):
+    if preparar:
+        inicializar_banco(db_path)
+    uri = Path(db_path).resolve().as_uri() + '?mode=ro'
+    conn = sqlite3.connect(uri, uri=True, timeout=10)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
+def validar_banco_leitura(db_path):
+    with conexao_leitura(db_path) as conn:
+        if conn.execute("PRAGMA user_version").fetchone()[0] != 2:
+            raise sqlite3.OperationalError("O modo somente leitura requer o banco da Estação 3 no schema v2.")
+        conn.execute("SELECT id, ciclo_id, imagem_path FROM inspecoes LIMIT 0")
+        conn.execute("SELECT sessao_id, atualizado_em, dados FROM estado_estacao LIMIT 0")
+
+
 @contextmanager
 def conexao(db_path=DATABASE_PATH):
     caminho = Path(db_path)
@@ -102,9 +133,8 @@ def atualizar_serial(identificador, status, db_path=DATABASE_PATH):
         conn.execute("UPDATE inspecoes SET serial_status=? WHERE id=?", (status, identificador))
 
 
-def buscar_inspecao(identificador, db_path=DATABASE_PATH):
-    inicializar_banco(db_path)
-    with conexao(db_path) as conn:
+def buscar_inspecao(identificador, db_path=DATABASE_PATH, *, preparar=True):
+    with conexao_leitura(db_path, preparar=preparar) as conn:
         row = conn.execute("SELECT * FROM inspecoes WHERE id=?", (identificador,)).fetchone()
         return dict(row) if row else None
 
@@ -126,7 +156,7 @@ def publicar_estado(sessao_id, dados, db_path=DATABASE_PATH):
             dados=excluded.dados""", (sessao_id, agora.isoformat(), json.dumps(dados)))
 
 
-def _estacao(conn):
+def ler_estado_estacao(conn):
     row = conn.execute("SELECT * FROM estado_estacao WHERE id=1").fetchone()
     if not row:
         return {'online': False, 'estado': 'SEM_CONEXAO', 'motivo': 'Processo de inspeção não iniciado.'}
@@ -159,9 +189,8 @@ def _contagens(conn):
     return dados
 
 
-def buscar_inspecoes_recentes(limite=20, db_path=DATABASE_PATH):
-    inicializar_banco(db_path)
-    with conexao(db_path) as conn:
+def buscar_inspecoes_recentes(limite=20, db_path=DATABASE_PATH, *, preparar=True):
+    with conexao_leitura(db_path, preparar=preparar) as conn:
         return _recentes(conn, max(1, min(int(limite), 100)))
 
 
@@ -171,14 +200,13 @@ def buscar_contagem(db_path=DATABASE_PATH):
         return _contagens(conn)
 
 
-def buscar_status(db_path=DATABASE_PATH):
-    inicializar_banco(db_path)
-    with conexao(db_path) as conn:
+def buscar_status(db_path=DATABASE_PATH, *, preparar=True):
+    with conexao_leitura(db_path, preparar=preparar) as conn:
         conn.execute('BEGIN')
         contagens = _contagens(conn)
         recentes = _recentes(conn, 20)
         return {'ultima': recentes[0] if recentes else None,
-                'estacao': _estacao(conn), 'contagens': contagens, 'historico': recentes,
+                'estacao': ler_estado_estacao(conn), 'contagens': contagens, 'historico': recentes,
                 'grafico': {'labels': ['OK', 'NOK', 'Inconclusivo'],
                             'valores': [contagens['ok'], contagens['nok'], contagens['inconclusivo']]}}
 

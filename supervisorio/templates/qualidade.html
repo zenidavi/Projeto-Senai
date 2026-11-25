@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}{% endblock %} · Estação 03</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='analises.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='qualidade.css') }}">
+</head>
+<body class="qualidade">
+  <header><span class="eyebrow">SENAI · VOLKSWAGEN | ESTAÇÃO 03</span><h1>{{ self.titulo() }}</h1></header>
+  <main>
+    {% include 'abas.html' %}
+    {% if simulacao %}<p class="modo">Modo simulação · Banco de demonstração</p>{% endif %}
+    {% if somente_leitura %}<p class="modo">Modo somente leitura</p>{% endif %}
+    {% block conteudo %}{% endblock %}
+  </main>
+</body>
+</html>
