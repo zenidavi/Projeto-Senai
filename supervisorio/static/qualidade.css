@@ -1,0 +1,15 @@
+.abas-estacao {display:flex;flex-wrap:wrap;gap:8px;grid-column:1/-1}
+.abas-estacao a {padding:10px 13px;border:1px solid #375879;border-radius:7px;background:#0c2039;color:#dceaff;text-decoration:none;font-size:.84rem;font-weight:650}
+.abas-estacao a:hover,.abas-estacao a[aria-current=page] {background:#174775;border-color:#62b7f0;color:#fff}
+.qualidade {background:#071629;color:#edf6ff;font-family:Inter,'Segoe UI',Arial,sans-serif}
+.qualidade header,.qualidade main {max-width:1180px}
+.qualidade .painel {background:#102844;border-color:#294766}
+.qualidade .modo {padding:10px 14px;border-left:3px solid #62b7f0;background:#102c4c;margin:0;color:#dceaff}
+.form-qualidade {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%, 165px),1fr));gap:14px;margin-top:14px}
+.form-qualidade label {display:grid;gap:6px;color:#dceaff;font-size:.85rem}
+.form-qualidade input,.form-qualidade select,.form-qualidade textarea {width:100%;padding:9px;border:1px solid #416182;border-radius:6px;background:#071629;color:#edf6ff;font:inherit}
+.form-qualidade button {background:#0065a8;border-color:#398cc7;color:#fff}
+.form-qualidade .form-largo {grid-column:1/-1}
+:is(.abas-estacao,.qualidade) :focus-visible {outline:2px solid #76d6ff;outline-offset:3px}
+.linha-grupo .motivo-link {padding:4px 0;border:0;background:transparent;text-align:left;color:#a9daff;text-decoration:underline;overflow-wrap:anywhere}
+.ocorrencia-link {display:block;margin-top:5px;font-size:.72rem}

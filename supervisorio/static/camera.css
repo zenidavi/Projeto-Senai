@@ -1,15 +1,11 @@
-
-.camera-web-painel {margin-bottom:22px}
-.camera-web-head {display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
-.camera-web-head h2{margin:0}
-#camera-web-status{font-size:.85rem;opacity:.8}
-.camera-web-view{width:100%;background:#080f18;min-height:250px;aspect-ratio:16/8;display:grid;place-items:center;border:1px solid #30445a;border-radius:10px;overflow:hidden;text-align:center}
-.camera-web-view img{max-width:100%;max-height:100%;object-fit:contain}
-.camera-web-view img:not([hidden]){width:100%;height:100%}
-#camera-web-placeholder{max-width:430px;padding:20px;color:#b0c5d6}
-.camera-web-actions{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0}
-.camera-web-actions p{margin:6px 0;font-size:.9rem;opacity:.8}
-#camera-web-iniciar{background:#116c9e;color:white;border:0;border-radius:8px;padding:12px 22px;font-weight:700;cursor:pointer}
-#camera-web-iniciar:disabled{opacity:.35;cursor:not-allowed}
-.camera-web-painel small{display:block;opacity:.7;line-height:1.6}
-@media(max-width:650px){.camera-web-actions{display:block}.camera-web-view{min-height:200px}.camera-web-head{flex-wrap:wrap}#camera-web-iniciar{margin-top:8px;width:100%}}
+.camera-web-painel{min-width:0}
+.camera-web-cabecalho{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.camera-web-cabecalho h2{margin:0}#camera-web-status{color:#9cabbc;font-size:12px}
+.camera-web-corpo{min-height:220px;background:#0c141c;border:1px solid #30404f;border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#camera-web-imagem{display:block;width:100%;height:auto;max-height:65vh;object-fit:contain}
+#camera-web-imagem[hidden],#camera-web-placeholder[hidden]{display:none}
+.camera-web-controles{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-top:16px;padding:16px;border:1px solid #30404f;border-radius:9px;background:#111d27}
+.camera-web-descricao{display:grid;gap:6px}.camera-web-descricao strong{font-size:14px}.camera-web-descricao span{font-size:12px;color:#aab9c9}
+#camera-web-iniciar{border:0;border-radius:7px;background:#85b8ff;color:#0c1926;font-weight:750;padding:12px 20px;cursor:pointer;min-height:44px}
+#camera-web-iniciar:hover:not(:disabled){background:#b4d2ff}#camera-web-iniciar:disabled{opacity:.4;cursor:not-allowed}
+.camera-web-instrucao{color:#9cabbc;font-size:12px;margin:12px 0 0}

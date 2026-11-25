@@ -24,7 +24,9 @@ SERIAL_PORT = "COM3"
 BAUD_RATE = 9600
 SERIAL_RESET_SECONDS = 2.0  # Uno reinicia ao abrir a porta USB.
 # Use ESTACAO3_DB nos dois terminais para escolher outro banco.
-_db = Path(os.environ.get("ESTACAO3_DB", "supervisorio/inspecoes.db"))
+REAL_DATABASE_PATH = ROOT_DIR / "supervisorio/inspecoes.db"
+SIMULATION_DATABASE_PATH = ROOT_DIR / "supervisorio/simulacao.db"
+_db = Path(os.environ.get("ESTACAO3_DB", REAL_DATABASE_PATH))
 DATABASE_PATH = _db if _db.is_absolute() else ROOT_DIR / _db
 FLASK_HOST = "127.0.0.1"
 FLASK_PORT = 5000

@@ -4,6 +4,7 @@ from contextlib import redirect_stdout
 import importlib
 import io
 from pathlib import Path
+import re
 import tempfile
 import types
 import unittest
@@ -140,14 +141,40 @@ class ScriptsTests(unittest.TestCase):
         self.assertEqual(model.predict.call_args.kwargs["conf"], config.CONF_THRESHOLD)
 
     def test_loop_inferencia_sem_hardware(self):
+        self.verificar_loop_inferencia(preview_web=False)
+
+    def test_loop_inferencia_com_comando_do_flask(self):
+        self.verificar_loop_inferencia(preview_web=True)
+
+    def verificar_loop_inferencia(self, *, preview_web):
         with tempfile.TemporaryDirectory() as pasta:
             db = Path(pasta) / "fluxo.db"
+            imagens = Path(pasta) / "imagens"
             frame = np.zeros((120, 400, 3), dtype=np.uint8)
             cap = MagicMock()
             cap.read.return_value = (True, frame)
             deteccoes = [{"classe": "tampa_ok", "confianca": .95}]
             registrar = inferencia.registrar_ciclo
-            # Comando I e sete frames da mesma peça produzem uma confirmação.
+            client = create_app(db_path=db, image_dir=imagens).test_client()
+            pagina = client.get("/").data
+            token = re.search(rb'data-token="([a-f0-9]{64})"', pagina)[1].decode()
+            solicitacao = None
+            teclas = iter([(-1 if preview_web else ord("i"))] + [-1] * 6 + [ord("q")])
+
+            def teclado(_):
+                nonlocal solicitacao
+                tecla = next(teclas)
+                if preview_web and solicitacao is None:
+                    self.assertEqual(client.get("/api/video/frame").status_code, 200)
+                    resposta = client.post("/api/video/controle/inspecionar",
+                                           headers={"X-Estacao3-Token": token})
+                    self.assertEqual(resposta.status_code, 202)
+                    solicitacao = resposta.json["solicitacao_id"]
+                if preview_web and tecla == ord("q"):
+                    confirmacao = client.get(f"/api/video/controle/comando/{solicitacao}")
+                    self.assertEqual(confirmacao.json, {"entregue": True, "aceito": True})
+                return tecla
+
             with patch.object(inferencia, "carregar_modelo", return_value=MagicMock()), \
                  patch.object(inferencia, "abrir_camera", return_value=cap), \
                  patch.object(inferencia, "conectar_serial", return_value=None), \
@@ -157,11 +184,20 @@ class ScriptsTests(unittest.TestCase):
                  patch.object(inferencia, "publicar_estado", side_effect=lambda s, d: database.publicar_estado(s, d, db)), \
                  patch.object(inferencia, "versao_modelo", return_value="TESTE"), \
                  patch.object(config, "SAVE_IMAGES", False), \
+                 patch.object(config, "IMAGE_DIR", imagens), \
+                 patch.object(config, "USE_SERIAL", False), \
+                 patch.object(config, "INSPECTION_MODE", "manual"), \
                  patch("cv2.imshow"), patch("cv2.destroyAllWindows"), \
-                 patch("cv2.waitKey", side_effect=[ord("i")] + [-1] * 6 + [ord("q")]), \
+                 patch("cv2.waitKey", side_effect=teclado), \
                  redirect_stdout(io.StringIO()):
-                self.assertEqual(inferencia.main(), 0)
+                self.assertEqual(inferencia.main(preview_web=preview_web), 0)
             self.assertEqual(database.buscar_contagem(db)["total"], 1)
+            if preview_web:
+                diag = client.get("/api/analises/diagnostico").json
+                for fase in ("captura", "inferencia", "codificacao_jpeg", "publicacao_jpeg"):
+                    self.assertGreaterEqual(diag[f"latencia_{fase}_ms"], 0)
+                self.assertIsNone(diag["fps_inferencia"])
+                self.assertEqual(diag["preview"]["estado"], "indisponivel")
             cap.release.assert_called_once()
 
     def test_importar_nao_abre_camera(self):

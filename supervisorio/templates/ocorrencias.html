@@ -1,0 +1,54 @@
+{% extends 'qualidade.html' %}
+{% block titulo %}Ocorrências{% endblock %}
+{% block conteudo %}
+{% if item %}
+  <section class="painel">
+    <a href="{{ url_for('ocorrencias.lista') }}">← Voltar à fila</a>
+    <h2>Inspeção #{{ item.id }} · {{ item.resultado }}</h2>
+    <p>{{ item.timestamp }} · {{ 'Real' if item.origem == 'real' else 'Simulação' }}</p>
+    <p><strong>Motivo registrado</strong> {{ item.motivo or 'Sem motivo registrado' }}</p>
+    {% if item.imagem_path %}<p><a href="{{ url_for('imagem', identificador=item.id) }}" target="_blank" rel="noopener">Abrir imagem da inspeção</a></p>{% endif %}
+  </section>
+  <section class="painel">
+    <h2>Tratamento</h2>
+    {% if erro %}<p class="erro" role="alert">{{ erro }}</p>{% endif %}
+    {% if salvo %}<p class="modo" role="status">Tratamento salvo.</p>{% endif %}
+    {% if somente_leitura %}
+      <p><strong>{{ status_opcoes[item.status] }}</strong> · {{ item.responsavel or 'Sem responsável' }}</p>
+      <p>{{ item.acao or 'Nenhuma ação registrada' }}</p>
+    {% else %}
+      <form method="post" class="form-qualidade">
+        <input type="hidden" name="token" value="{{ token }}">
+        <input type="hidden" name="versao" value="{{ item.atualizado_em or '' }}">
+        <label>Status<select name="status">{% for chave, rotulo in status_opcoes.items() %}
+          <option value="{{ chave }}"{% if item.status == chave %} selected{% endif %}>{{ rotulo }}</option>
+        {% endfor %}</select></label>
+        <label>Responsável<input name="responsavel" maxlength="120" value="{{ item.responsavel or '' }}"></label>
+        <label class="form-largo">Ação tomada<textarea name="acao" maxlength="2000" rows="4">{{ item.acao or '' }}</textarea></label>
+        <div><button type="submit">Salvar tratamento</button></div>
+      </form>
+    {% endif %}
+    {% if item.atualizado_em %}<p class="nota">Última atualização em {{ item.atualizado_em[:19]|replace('T', ' ') }}</p>{% endif %}
+  </section>
+{% else %}
+  <section class="painel">
+    <h2>Fila de tratamento</h2>
+    <p>Abra uma inspeção NOK ou inconclusiva para registrar o responsável e a ação tomada.</p>
+    <nav class="abas-estacao" aria-label="Filtrar ocorrências">
+      <a href="{{ url_for('ocorrencias.lista') }}"{% if not filtro %} aria-current="page"{% endif %}>Todas</a>
+      {% for chave, rotulo in status_opcoes.items() %}
+      <a href="{{ url_for('ocorrencias.lista', status=chave) }}"{% if filtro == chave %} aria-current="page"{% endif %}>{{ rotulo }}</a>
+      {% endfor %}
+    </nav>
+    <p>{{ itens|length }} ocorrência(s)</p>
+    {% if itens %}
+    <div class="tabela"><table><thead><tr><th>Inspeção</th><th>Data</th><th>Resultado</th><th>Motivo</th><th>Status</th><th>Responsável</th></tr></thead>
+    <tbody>{% for registro in itens %}<tr>
+      <td><a href="{{ url_for('ocorrencias.detalhe', identificador=registro.id) }}">Abrir #{{ registro.id }}</a></td>
+      <td>{{ registro.timestamp[:10] }}</td><td><span class="badge {{ registro.resultado|lower }}">{{ registro.resultado }}</span></td>
+      <td>{{ registro.motivo or 'Sem motivo registrado' }}</td><td>{{ status_opcoes[registro.status] }}</td><td>{{ registro.responsavel or '—' }}</td>
+    </tr>{% endfor %}</tbody></table></div>
+    {% else %}<p>Nenhuma ocorrência neste recorte.</p>{% endif %}
+  </section>
+{% endif %}
+{% endblock %}

@@ -21,7 +21,7 @@ Terminal 2:
 python supervisorio/simulador.py --cenario misto --quantidade 8 --intervalo 2 --seed 42
 ```
 
-Se ESTACAO3_DB já estiver definido nesse terminal, use o mesmo caminho do terminal 1. Sem a variável, o simulador escolhe supervisorio/simulacao.db.
+O simulador grava apenas em `supervisorio/simulacao.db`. Se `ESTACAO3_DB` estiver definido no terminal do simulador, use esse mesmo caminho ou remova a variável. O painel e a página de análises exibem **Modo simulação** quando abertos com esse banco.
 
 ## O que mostrar e explicar
 

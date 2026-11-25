@@ -1,15 +1,21 @@
-<section id="estacao3-camera-supervisorio" class="painel camera-web-painel" data-token="{{ camera_token|default('') }}">
-  <div class="camera-web-head">
-    <h2>Câmera ao vivo · YOLOv8</h2>
-    <span id="camera-web-status" role="status">Aguardando inferência</span>
+<section id="estacao3-camera-supervisorio" class="painel camera-web-painel"
+         aria-labelledby="camera-web-titulo" data-token="{{ camera_token|default('') }}">
+  <div class="camera-web-cabecalho">
+    <h2 id="camera-web-titulo">Câmera ao vivo · YOLOv8</h2>
+    <span id="camera-web-status" role="status">Aguardando inferência...</span>
   </div>
-  <div class="camera-web-view">
-    <img id="camera-web-imagem" alt="Imagem da câmera de inspeção com detecções da IA" hidden>
-    <p id="camera-web-placeholder">Sem câmera conectada. Inicie <code>python inferencia.py</code> para visualizar a prévia.</p>
+  <div class="camera-web-corpo">
+    <img id="camera-web-imagem" alt="Imagem da Estação 3 com detecções YOLOv8" hidden>
+    <p id="camera-web-placeholder">Inicie python inferencia.py para visualizar a câmera.</p>
   </div>
-  <div class="camera-web-actions">
-    <div><strong>Inspeção manual</strong><p id="camera-web-controle-estado">Consultando o estado da estação…</p></div>
+  {% if not somente_leitura %}
+  <div class="camera-web-controles">
+    <div class="camera-web-descricao">
+      <strong>Inspeção manual — piloto local</strong>
+      <span id="camera-web-controle-estado" aria-live="polite">Verificando conexão...</span>
+    </div>
     <button type="button" id="camera-web-iniciar" disabled>Iniciar inspeção</button>
   </div>
-  <small>Este botão só funciona no modo manual com USE_SERIAL=False. O comando não equivale à confirmação do Arduino.</small>
+  <p class="camera-web-instrucao">Use a tecla <b>I</b> na janela da IA ou o botão no navegador em modo manual com a serial desabilitada. O resultado aparece no histórico ao final do ciclo.</p>
+  {% endif %}
 </section>

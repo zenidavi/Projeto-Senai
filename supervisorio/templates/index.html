@@ -7,14 +7,26 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <script defer src="{{ url_for('static', filename='dashboard.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='camera.css') }}">
+  <!-- ESTACAO3_CENTRO_VISUAL_V1 -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='centro_controle.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='qualidade.css') }}">
+  <script defer src="{{ url_for('static', filename='centro_controle.js') }}"></script>
 </head>
 <body data-poll-interval="{{ poll_interval }}">
   <header><div><span class="eyebrow">SENAI / VOLKSWAGEN DO BRASIL</span>
-    <h1>Estação 03 <span>Inspeção de tampa</span></h1></div>
-    <div id="conexao" role="status">Conectando ao painel…</div>  <nav class="est3-analises-nav" style="padding:10px 20px"><a href="/analises">Dados e relatórios</a></nav>
-</header>
+    <h1>Estação 03 <span>Inspeção de tampas</span></h1></div>
+    <div id="conexao" role="status">Conectando ao painel…</div></header>
   <main>
-    {% include 'camera_widget.html' %}
+    {% include 'abas.html' %}
+    {% if somente_leitura %}
+    <p class="aviso-consulta" role="status">Modo somente leitura · Consulta ao histórico</p>
+    {% endif %}
+    {% if simulacao %}
+    <p class="aviso-simulacao" role="status">Modo simulação · Ciclos gerados por software</p>
+    {% else %}
+    {% include 'camera_widget.html' %}  <!-- CONSOLIDACAO_ESTACAO3_V1 -->
+    {% endif %}
+
     <section class="painel" aria-labelledby="estacao-titulo">
       <div class="titulo-historico"><h2 id="estacao-titulo">Estado atual da estação</h2><span id="estacao-origem">—</span></div>
       <div id="estacao-estado" class="estado-estacao" aria-live="polite">SEM CONEXÃO</div>
